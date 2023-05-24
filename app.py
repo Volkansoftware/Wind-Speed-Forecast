@@ -7,6 +7,8 @@ import pandas as pd
 from datetime import datetime, timedelta
 from sklearn.linear_model import LinearRegression
 import math
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from sklearn.metrics import mean_absolute_error
 
@@ -43,30 +45,19 @@ def create_wind_speed_forecast_plot():
 
     df = pd.DataFrame(weather_data)
 
-# Yeni özellikler oluşturma
+# mevcut verilerden yeni özellikler çıkarma  
     df["hour"] = df["date"].apply(lambda x: x.hour)
     df["day"] = df["date"].apply(lambda x: x.day)
     df["month"] = df["date"].apply(lambda x: x.month)
     df["wind_direction_cos"] = df["wind_direction"].apply(lambda x: round(math.cos(math.radians(x)), 2))
     df["wind_direction_sin"] = df["wind_direction"].apply(lambda x: round(math.sin(math.radians(x)), 2))
 
-# Mevcut verilere dayalı olarak rüzgar hızını tahmin etme
+# Mevcut verilere dayalı olarak  eğitir
     X = df[["hour", "day", "month", "temp", "pressure", "humidity", "wind_direction_cos", "wind_direction_sin"]]
     y = df["wind_speed"]
     reg = LinearRegression().fit(X, y)
 
-# Son 5 günün verisini oluşturma
-    last_five_days = [datetime.now() - timedelta(days=i) for i in range(4, -1, -1)]
-    last_five_days_df = pd.DataFrame()
-    for day in last_five_days:
-        for hour in range(0, 24, 3):
-            date = datetime(day.year, day.month, day.day, hour)
-            last_five_days_df = last_five_days_df.append({
-                "date": date,
-                "hour": hour,
-                "day": day.day,
-                "month": day.month
-        }, ignore_index=True)
+
 
 # Gerçek verileri API'den alma
     api_url = f"http://api.openweathermap.org/data/2.5/forecast?q={city}&appid={api_key}"
@@ -127,6 +118,7 @@ app = Flask(__name__)
 
 @app.route('/')
 def index():
+   
     return render_template('index.html', city="Istanbul")
 
 @app.route('/plot')
