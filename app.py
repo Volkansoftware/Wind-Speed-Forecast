@@ -11,7 +11,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from flask import Flask, render_template, send_file, make_response
-import matplotlib.dates as mdates  # <-- add this line
+import matplotlib.dates as mdates  
 
 def create_wind_speed_forecast_plot():
     city = "Istanbul"
@@ -73,7 +73,7 @@ def create_wind_speed_forecast_plot():
     result_df = result_df[result_df["date"] <= five_days_later]
 
     plt.plot(result_df["date"], result_df["predicted"], label="predicted")
-    plt.plot(result_df["date"], result_df["actual"], label="actual")
+    plt.plot(result_df["date"], result_df["actual"], label="openweathermap")
     plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%d/%m/%Y'))  # <-- add this line
     plt.gca().xaxis.set_major_locator(mdates.DayLocator())  # <-- add this line
     plt.xlabel("Date")
