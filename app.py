@@ -49,7 +49,7 @@ def create_wind_speed_forecast_plot():
     y = df["wind_speed"]
     dates = df["date"]
 
-    X_train, X_test, y_train, y_test, dates_train, dates_test = train_test_split(X, y, dates, test_size=0.2, random_state=40)
+    X_train, X_test, y_train, y_test, dates_train, dates_test = train_test_split(X, y, dates, test_size=0.2, random_state=25)
 
     reg = LinearRegression().fit(X_train, y_train)
 
