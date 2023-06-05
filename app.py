@@ -1,16 +1,16 @@
 import io
-import base64
+
 import requests
 import json
 import pandas as pd
 from datetime import datetime, timedelta
 from sklearn.linear_model import LinearRegression
-from sklearn.model_selection import cross_val_score, train_test_split
+from sklearn.model_selection import train_test_split
 import math
-import matplotlib
-matplotlib.use('Agg')
+
+
 import matplotlib.pyplot as plt
-from flask import Flask, render_template, send_file, make_response
+from flask import Flask, render_template, send_file
 import matplotlib.dates as mdates  
 
 def create_wind_speed_forecast_plot():
@@ -22,8 +22,8 @@ def create_wind_speed_forecast_plot():
 
     weather_data = []
     for item in data["list"]:
-        date_str = item["dt_txt"]
-        date = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S")
+        date_str = item["dt_txt"] #her bir ölçüm için tarih ve saat bilgisini bir string (metin) olarak alır.
+        date = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S") # aldığı tarih ve saat bilgisini Python'un anlayabileceği bir datetime nesnesine dönüştürür.
         temp = item["main"]["temp"] - 273.15
         pressure = item["main"]["pressure"]
         humidity = item["main"]["humidity"]
@@ -38,40 +38,38 @@ def create_wind_speed_forecast_plot():
             "wind_direction": wind_direction
         })
 
-    df = pd.DataFrame(weather_data)
+    df = pd.DataFrame(weather_data) # weather datayı dataframe dönüştürür
+    print(df.head())
     df["hour"] = df["date"].apply(lambda x: x.hour)
     df["day"] = df["date"].apply(lambda x: x.day)
     df["month"] = df["date"].apply(lambda x: x.month)
     df["wind_direction_cos"] = df["wind_direction"].apply(lambda x: round(math.cos(math.radians(x)), 2))
     df["wind_direction_sin"] = df["wind_direction"].apply(lambda x: round(math.sin(math.radians(x)), 2))
-
+    print(df.head())
     X = df[["hour", "day", "month", "temp", "pressure", "humidity", "wind_direction_cos", "wind_direction_sin"]]
-    y = df["wind_speed"]
-    dates = df["date"]
-
+    y = df["wind_speed"] # hedef değişken
+    dates = df["date"] # tarihleri izlemek için oluşturuldu
+    
     X_train, X_test, y_train, y_test, dates_train, dates_test = train_test_split(X, y, dates, test_size=0.2, random_state=25)
-
+# 25 değeri her seferinde aynı bölünmüş veriyi elde etmek için kullanılır, böylece sonuçlar yeniden üretilebilir.
     reg = LinearRegression().fit(X_train, y_train)
 
-    scores = cross_val_score(reg, X_train, y_train, cv=5, scoring='neg_mean_absolute_error')
+   
 
-    print(f'Cross-validated scores: {scores}')
-    print(f'Average MAE: {scores.mean()}')
-
-    y_pred = reg.predict(X_test)
+    y_pred = reg.predict(X_test) # daha önce eğitilmiş olan reg modelini kullanarak X_test veri setindeki rüzgar hızını tahmin eder.
 
     diff = abs(y_test - y_pred)
     error_rate = sum(diff) / sum(y_test)
     print(f"Test set error rate: {error_rate:.2f}")
 
-    # Create a new DataFrame to hold the date, actual and predicted values
-    result_df = pd.DataFrame({"date": dates_test, "actual": y_test, "predicted": y_pred})
-
+    # test setindeki tarihler, gerçek rüzgar hızı değerleri ve tahmin edilen rüzgar hızı değerlerini içeren yeni bir DataFrame oluşturur.
+    result_df = pd.DataFrame({"date": dates_test, "actual": y_test, "predicted": y_pred}) 
+    print(result_df.head())
     # Sort the DataFrame by date
-    result_df = result_df.sort_values(by="date")
-    five_days_later = datetime.now() + timedelta(days=5)
-    result_df = result_df[result_df["date"] <= five_days_later]
-
+    result_df = result_df.sort_values(by="date") # date sütununa göre sıralanır 
+    five_days_later = datetime.now() + timedelta(days=5) # 5 günün sonrasını verir 
+    result_df = result_df[result_df["date"] <= five_days_later] # sadece 5 gün gözükecek şekilde filtreler 
+    
     plt.plot(result_df["date"], result_df["predicted"], label="predicted")
     plt.plot(result_df["date"], result_df["actual"], label="openweathermap")
     plt.gca().xaxis.set_major_formatter(mdates.DateFormatter('%d/%m/%Y'))  # <-- add this line
