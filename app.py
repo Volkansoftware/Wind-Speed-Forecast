@@ -51,6 +51,7 @@ def create_wind_speed_forecast_plot():
     dates = df["date"] # tarihleri izlemek için oluşturuldu
     
     X_train, X_test, y_train, y_test, dates_train, dates_test = train_test_split(X, y, dates, test_size=0.2, random_state=25)
+    #date test edilmesinin sebebi gelecekte plot içerisinde kullanmaktır
 # 25 değeri her seferinde aynı bölünmüş veriyi elde etmek için kullanılır, böylece sonuçlar yeniden üretilebilir.
     reg = LinearRegression().fit(X_train, y_train)
 
@@ -65,9 +66,10 @@ def create_wind_speed_forecast_plot():
     # test setindeki tarihler, gerçek rüzgar hızı değerleri ve tahmin edilen rüzgar hızı değerlerini içeren yeni bir DataFrame oluşturur.
     result_df = pd.DataFrame({"date": dates_test, "actual": y_test, "predicted": y_pred}) 
     print(result_df.head())
-    # Sort the DataFrame by date
+    
     result_df = result_df.sort_values(by="date") # date sütununa göre sıralanır 
-    five_days_later = datetime.now() + timedelta(days=5) # 5 günün sonrasını verir 
+    result_df["date"] = pd.to_datetime(result_df["date"]).dt.date # DataFrame'deki 'date' sütununun tüm değerlerini tarih-saat formatından date formatına dönüştürür 
+    five_days_later = (datetime.now() + timedelta(days=5)).date() # 5 günün sonrasını verir 
     result_df = result_df[result_df["date"] <= five_days_later] # sadece 5 gün gözükecek şekilde filtreler 
     
     plt.plot(result_df["date"], result_df["predicted"], label="predicted")
